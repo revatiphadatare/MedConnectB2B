@@ -9,6 +9,7 @@ node_modules/
 .env.production
 .env.test
 backend/.env
+frontend/.env.production
 
 # ── Build output ──────────────────────────────────────────
 dist/
