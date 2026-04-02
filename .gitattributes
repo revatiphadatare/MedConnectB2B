@@ -1,0 +1,17 @@
+# Default: normalize all text files to LF in repo
+* text=auto eol=lf
+
+# Windows-specific files should use CRLF
+*.bat text eol=crlf
+*.cmd text eol=crlf
+
+# Keep binaries untouched
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.gif binary
+*.ico binary
+*.pdf binary
+# Ensure Git config files always use LF
+.gitattributes text eol=lf
+.gitignore text eol=lf
