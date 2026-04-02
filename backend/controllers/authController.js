@@ -1,13 +1,12 @@
-const asyncHandler    = require('express-async-handler');
-const User            = require('../models/User');
-const generateToken   = require('../utils/generateToken');
-const { ROLES }       = require('../config/constants');
+const asyncHandler  = require('express-async-handler');
+const User          = require('../models/User');
+const generateToken = require('../utils/generateToken');
+const { ROLES }     = require('../config/constants');
 
 // ── Register (public users only — admin cannot self-register) ──
 const register = asyncHandler(async (req, res) => {
   const { name, email, password, role, company, contactPerson } = req.body;
 
-  // Block admin role from public registration
   if (role === ROLES.ADMIN) {
     res.status(403);
     throw new Error('Admin accounts cannot be self-registered');
@@ -50,7 +49,7 @@ const register = asyncHandler(async (req, res) => {
   });
 });
 
-// ── General login (for all non-admin roles) ────────────────
+// ── Single login endpoint — works for ALL roles including admin ──
 const login = asyncHandler(async (req, res) => {
   const { email, password } = req.body;
 
@@ -66,12 +65,6 @@ const login = asyncHandler(async (req, res) => {
   if (!user || !(await user.matchPassword(password))) {
     res.status(401);
     throw new Error('Invalid email or password');
-  }
-
-  // Block admin from using the general login
-  if (user.role === ROLES.ADMIN) {
-    res.status(403);
-    throw new Error('Admin must use the Admin Login portal');
   }
 
   if (!user.isActive) {
@@ -97,47 +90,8 @@ const login = asyncHandler(async (req, res) => {
   });
 });
 
-// ── Admin-only login (separate portal) ─────────────────────
-const adminLogin = asyncHandler(async (req, res) => {
-  const { email, password, adminKey } = req.body;
-
-  if (!email || !password) {
-    res.status(400);
-    throw new Error('Email and password are required');
-  }
-
-  const user = await User.findOne({
-    email: email.toLowerCase().trim(),
-    role:  ROLES.ADMIN,
-  }).select('+password');
-
-  if (!user || !(await user.matchPassword(password))) {
-    res.status(401);
-    throw new Error('Invalid admin credentials');
-  }
-
-  if (!user.isActive) {
-    res.status(403);
-    throw new Error('Admin account is deactivated');
-  }
-
-  user.lastLogin = new Date();
-  await user.save({ validateBeforeSave: false });
-
-  res.json({
-    success: true,
-    data: {
-      _id:        user._id,
-      name:       user.name,
-      email:      user.email,
-      role:       user.role,
-      company:    user.company,
-      isApproved: true,
-      isVerified: true,
-      token:      generateToken(user._id, user.role),
-    },
-  });
-});
+// ── Keep adminLogin as alias to login (backward compat) ────
+const adminLogin = login;
 
 // ── Get current user ───────────────────────────────────────
 const getMe = asyncHandler(async (req, res) => {
@@ -151,7 +105,7 @@ const updateProfile = asyncHandler(async (req, res) => {
   const { name, company, contactPerson } = req.body;
 
   if (name)          user.name          = name.trim();
-  if (company)       user.company       = { ...user.company?.toObject?.() || user.company, ...company };
+  if (company)       user.company       = { ...(user.company?.toObject?.() || user.company), ...company };
   if (contactPerson) user.contactPerson = { ...user.contactPerson, ...contactPerson };
 
   const updated = await user.save();

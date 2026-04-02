@@ -23,8 +23,14 @@ export default function LoginPage() {
     try {
       const data = await login(form.email.trim(), form.password);
       toast.success(`Welcome back, ${data.name?.split(' ')[0]}!`);
-      const from = location.state?.from?.pathname;
-      navigate((from && !from.startsWith('/admin')) ? from : '/dashboard', { replace: true });
+
+      // Route based on role
+      if (data.role === 'admin') {
+        navigate('/admin/dashboard', { replace: true });
+      } else {
+        const from = location.state?.from?.pathname;
+        navigate((from && !from.startsWith('/admin')) ? from : '/dashboard', { replace: true });
+      }
     } catch (err) {
       toast.error(err.response?.data?.message || 'Invalid email or password');
     } finally {
@@ -35,7 +41,7 @@ export default function LoginPage() {
   return (
     <div className="min-h-screen bg-slate-950 flex">
 
-      {/* Left decorative panel */}
+      {/* Left panel */}
       <div className="hidden lg:flex w-1/2 bg-slate-900 items-center justify-center
         p-12 relative overflow-hidden border-r border-white/5">
         <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_30%_50%,rgba(30,157,170,0.1),transparent_60%)]"/>
@@ -63,7 +69,7 @@ export default function LoginPage() {
         </div>
       </div>
 
-      {/* Right form panel */}
+      {/* Right panel */}
       <div className="flex-1 flex items-center justify-center p-6">
         <div className="w-full max-w-md">
 
@@ -124,7 +130,6 @@ export default function LoginPage() {
             </Link>
           </p>
 
-          {/* Admin portal link — subtle, not prominent */}
           <div className="mt-8 pt-6 border-t border-white/5 text-center">
             <Link to="/admin/login"
               className="inline-flex items-center gap-1.5 text-xs text-slate-600
@@ -133,7 +138,6 @@ export default function LoginPage() {
               Admin Portal
             </Link>
           </div>
-
         </div>
       </div>
     </div>
